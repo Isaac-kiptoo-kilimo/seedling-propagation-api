@@ -1,33 +1,28 @@
-const {app,logger,db} = require('./app');
+import { app, logger } from "./app.js";
+// import db from "./database.js";
 
-const server = app.listen(9000, (err) => {
+const PORT = 9000;
+
+// Start Server
+const server = app.listen(PORT, (err) => {
   if (err) throw err;
-  logger.info(`API listening on port 9000`);
+  logger.info(`API listening on port ${PORT}`);
 });
 
-process.on('SIGINT', async () => {
-  // closing the HTTP Server and db.
-  try{
-    await db.sequelize.close(); // close db connection
+const shutdown = async (signal) => {
+  logger.info(`${signal} received: Closing HTTP server and Database...`);
+  
+  try {
+    await db.sequelize.close(); // Close database connection
     server.close(() => {
-      logger.info("HTTP server and Database closed");
+      logger.info("HTTP server and Database closed successfully.");
+      process.exit(0);
     });
-  }catch(error){
-    logger.error("An error occurred closing connection " + error.message);
+  } catch (error) {
+    logger.error("An error occurred closing connection: " + error.message);
     process.exit(1);
   }
-})
+};
 
-process.on("SIGTERM", async () => {
-  try{
-    await db.sequelize.close();
-    logger.info("SIGTERM signal received: closing HTTP server");
-    server.close(() => {
-      logger.info("HTTP server closed");
-    });
-  }catch(error){
-    logger.error("An error occurred closing connection " + error.message);
-    process.exit(1);
-  }
-});
-
+process.on("SIGINT", () => shutdown("SIGINT"));
+process.on("SIGTERM", () => shutdown("SIGTERM"));

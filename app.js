@@ -1,24 +1,25 @@
-require("dotenv").config();
-const cors = require("cors");
-const express = require('express');
-const logger = require("./logger");
-const bodyParser = require("body-parser");
-const appRoutes = require('./routes');
+import "dotenv/config";
+import cors from "cors";
+import express from "express";
+import logger from "./logger/index.js";
+import bodyParser from "body-parser";
+import appRoutes from "./routes/index.js";
 const app = express();
-const {checkEnv} = require('./utils/env');
-const db = require("./database");
-const env  = checkEnv();
+// const {checkEnv} = require('./utils/env');
+// const db = require("./database");
+// const env  = checkEnv();
 
-app.use(async (req, res, next) => {
-  res.reply = require("./middleware/reply");
+// app.use(async (req, res, next) => {
+//   res.reply = require("./middleware/reply");
 
-  req.db = db;
-  req.env = env;
-  req.http = require("./middleware/http");
+//   req.db = db;
+//   req.env = env;
+//   req.http = require("./middleware/http");
   
-  next();
-});
+//   next();
+// });
 
+// middlewares
 app.use(cors());
 app.use(bodyParser.json());
 
@@ -42,9 +43,4 @@ app.use((err, req, res, next) => {
   }
 });
 // End of error handling
-
-module.exports = {
-    app,
-    logger,
-    db
-}
+export { app, logger };
