@@ -48,3 +48,5 @@ temp/
 *.eslintcache
 *.babelrc
 public/
+
+endpoints/

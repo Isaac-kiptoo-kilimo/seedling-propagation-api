@@ -1,9 +1,10 @@
 import express from "express";
+import { dbtest, ok, ready } from "../controllers/healthCheck.js";
 
 const healthRoutes = express.Router();
 
-healthRoutes.get("/health", (req, res) => {
-  res.status(200).json({ message: "This is a health check" });
-});
+healthRoutes.get("/health/ok", ok);
+healthRoutes.get("/health/ready", ready);
+healthRoutes.get("/health/dbtest", dbtest);
 
 export default healthRoutes;

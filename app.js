@@ -30,17 +30,10 @@ app.use("/api",[
 
 // Error Handling
 app.use((err, req, res, next) => {
-  if (err instanceof multer.MulterError) { // Multer-specific errors
-      return res.status(418).json({
+      return res.status(err.status || 500).json({
           success: false,
-          message: err.message,
+          message: err.message || "An error occurred processing your request. Try again",
       });
-  }else{
-      return res.status(500).json({
-        success:false,
-        message: err ? err : "An error occurred processing your request. Try again"
-      })
-  }
 });
 // End of error handling
 export { app, logger };
