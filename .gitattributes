@@ -1,0 +1,11 @@
+# Force LF for specific file types
+*.json text eol=lf
+*.yaml text eol=lf
+*.js text eol=lf
+*.ts text eol=lf
+*.tsx text eol=lf
+*.sh text eol=lf
+*.md text eol=lf
+
+# Auto-detect text files and ensure consistent LF endings
+* text=auto

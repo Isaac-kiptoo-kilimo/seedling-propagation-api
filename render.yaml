@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: seedling-backend
+    env: node
+    plan: free
+    repo: https://github.com/Isaac-kiptoo-kilimo/seedling-propagation-api
+    branch: master
+    autoDeploy: true
+    buildCommand: "npm install"
+    startCommand: "npm start"
+    envVars:
+      - fromGroup: seedling propagation

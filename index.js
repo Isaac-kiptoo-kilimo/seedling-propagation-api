@@ -1,33 +1,36 @@
-const {app,logger,db} = require('./app');
+import { app, logger } from "./app.js";
+import connectDB from "./config/db.js";
+import dotenv from "dotenv";
+dotenv.config();
 
-const server = app.listen(9000, (err) => {
+const PORT = process.env.PORT || 9000;
+
+// Start Server
+connectDB().then(() => {
+const server = app.listen(PORT, (err) => {
   if (err) throw err;
-  logger.info(`API listening on port 9000`);
+  logger.info(`API listening on port ${PORT}`);
 });
 
-process.on('SIGINT', async () => {
-  // closing the HTTP Server and db.
-  try{
-    await db.sequelize.close(); // close db connection
+const shutdown = async (signal) => {
+  logger.info(`${signal} received: Closing HTTP server and Database...`);
+  
+  try {
+    await import('mongoose').then(({ default: mongoose }) => mongoose.connection.close());
     server.close(() => {
-      logger.info("HTTP server and Database closed");
+      logger.info("HTTP server and Database closed successfully.");
+      process.exit(0);
     });
-  }catch(error){
-    logger.error("An error occurred closing connection " + error.message);
+  } catch (error) {
+    logger.error("An error occurred closing connection: " + error.message);
     process.exit(1);
   }
-})
+};
 
-process.on("SIGTERM", async () => {
-  try{
-    await db.sequelize.close();
-    logger.info("SIGTERM signal received: closing HTTP server");
-    server.close(() => {
-      logger.info("HTTP server closed");
-    });
-  }catch(error){
-    logger.error("An error occurred closing connection " + error.message);
-    process.exit(1);
-  }
+process.on("SIGINT", () => shutdown("SIGINT"));
+process.on("SIGTERM", () => shutdown("SIGTERM"));
+
+}).catch((err) => {
+  logger.error("MongoDB connection failed: " + err.message);
+  process.exit(1);
 });
-
