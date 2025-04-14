@@ -125,8 +125,8 @@ export const getStaff = async (req, res) => {
 
 export const createStaff = async (req, res) => {
   try {
-    const { fullName, email, phoneNumber } = req.body;
-    const password = generateRandomNumberString(fullName);
+    const { fullName, email, phoneNumber,password } = req.body;
+    // const password = generateRandomNumberString(fullName);
     const existing = await User.findOne({ email });
     if (existing) return res.status(400).json({ success: false, message: "Email already registered" });
 

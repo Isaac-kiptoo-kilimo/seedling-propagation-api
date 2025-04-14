@@ -25,6 +25,7 @@ export const validateStaffData = async (req,res,next) => {
         fullName: Joi.string().required(),
         email: Joi.string().email().required(),
         phoneNumber: Joi.string().required(),
+        password: Joi.string().required()
     });
     try{
         await schema.validateAsync(body);
