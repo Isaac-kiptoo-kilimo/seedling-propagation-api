@@ -8,25 +8,5 @@ services:
     autoDeploy: true
     buildCommand: "npm install"
     startCommand: "npm start"
-    secretsFilter: 'MONGO_URI,JWT_KEY,JWT_LIFETIME,JWT_REFRESH_TOKEN_LIFETIME,ADMINUSERPASSWORD,FRONTEND_LOGIN_URL,BREVO_SMTP_HOST,BREVO_SMTP_PORT,BREVO_USER,BREVO_API_KEY'
     envVars:
-      - key: MONGO_URI
-        sync: false
-      - key: JWT_KEY
-        sync: false
-      - key: JWT_LIFETIME
-        sync: false
-      - key: JWT_REFRESH_TOKEN_LIFETIME
-        sync: false
-      - key: ADMINUSERPASSWORD
-        sync: false
-      - key: FRONTEND_LOGIN_URL
-        sync: false
-      - key: BREVO_SMTP_HOST
-        sync: false
-      - key: BREVO_SMTP_PORT
-        sync: false
-      - key: BREVO_USER
-        sync: false
-      - key: BREVO_API_KEY
-        sync: false
+      - fromGroup: seedling propagation
