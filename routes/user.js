@@ -8,7 +8,7 @@ const userRoutes = express.Router();
 
 // Customer routes
 userRoutes.post("/user", validateUserData, createUser);
-userRoutes.put("/user/update/:userId",isJWTValid, updateUser);
+userRoutes.Patch("/user/update/:userId",isJWTValid, updateUser);
 userRoutes.get("/users",isJWTValid,isAdmin, getUsers);
 userRoutes.get("/user/:userId",isJWTValid, getUser);
 userRoutes.patch("/user/softDelete/:userId", isJWTValid,isAdmin, softDeleteUser);
@@ -17,7 +17,7 @@ userRoutes.delete("/user/delete/:userId",isJWTValid,isAdmin, deleteUser);
 
 // Staff routes
 userRoutes.post("/staff",isJWTValid,isAdmin, validateStaffData,createStaff);
-userRoutes.put("/staff/update/:staffId",isJWTValid,isAdmin, updateStaff);
+userRoutes.patch("/staff/update/:staffId",isJWTValid,isAdmin, updateStaff);
 userRoutes.get("/staff",isJWTValid,isAdmin, getStaff);
 userRoutes.get("/staff/:staffId",isJWTValid, getOneStaff);
 userRoutes.patch("/staff/softDelete/:staffId",isJWTValid,isAdmin, softDeleteStaff);
