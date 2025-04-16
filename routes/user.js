@@ -8,7 +8,7 @@ const userRoutes = express.Router();
 
 // Customer routes
 userRoutes.post("/user", validateUserData, createUser);
-userRoutes.Patch("/user/update/:userId",isJWTValid, updateUser);
+userRoutes.patch("/user/update/:userId",isJWTValid, updateUser);
 userRoutes.get("/users",isJWTValid,isAdmin, getUsers);
 userRoutes.get("/user/:userId",isJWTValid, getUser);
 userRoutes.patch("/user/softDelete/:userId", isJWTValid,isAdmin, softDeleteUser);
