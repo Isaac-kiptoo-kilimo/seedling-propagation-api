@@ -1,31 +1,30 @@
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
 const productSchema = new mongoose.Schema({
-  name: {
-    type: String,
-    required: true,
-  },
-  description: String,
-  category: String,
-  price: {
-    type: Number,
-    required: true,
-  },
-  image: String,
-  inStock: {
-    type: Boolean,
-    default: true,
-  },
-  createdBy: String,
-  modifiedBy: String,
-  createdAt: {
-    type: Date,
-    default: Date.now,
-  },
-  modifiedAt: {
-    type: Date,
-    default: Date.now,
-  },
+  productName: { type: String, required: true },
+  productDescription: { type: String },
+  initialPrice: { type: Number, required: true },
+  price: { type: Number, required: true },
+  productQuantity: { type: Number, required: true },
+  productImage: { type: String },
+  category: { type: mongoose.Schema.Types.ObjectId, ref: 'Category', required: true },
+  onOffer: { type: Boolean, default: false },
+  offerPrice: { type: Number },
+  createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+  isActive: { type: Boolean, default: true }, // Deactivate if stock is 0
+  createdAt: { type: Date, default: Date.now }
 });
 
-module.exports = mongoose.model('Product', productSchema);
+productSchema.pre('save', function (next) {
+  if (this.productQuantity <= 0) {
+    this.isActive = false;
+  } else {
+    this.isActive = true;
+  }
+  next();
+});
+
+
+const Product = mongoose.model('Product', productSchema);
+
+export default Product;
