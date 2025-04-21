@@ -1,3 +1,4 @@
+import auditRouter from "./auditLog.js";
 import authRoutes from "./auth.js";
 import categoryRoutes from "./category.js";
 import healthRoutes from "./health.js";
@@ -11,5 +12,6 @@ export default [
   authRoutes,
   categoryRoutes,
   productRoutes,
-  orderRroutes
+  orderRroutes,
+  auditRouter
 ];
