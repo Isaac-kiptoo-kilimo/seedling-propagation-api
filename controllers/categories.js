@@ -17,10 +17,9 @@ export const createCategory = async (req, res) => {
     });
 
     await category.save();
-    return res.status(201).json({ message: 'Category created successfully', category });
+    return res.status(201).json({success: true, message: 'Category created successfully', category });
   } catch (error) {
-    console.error(error);
-    return res.status(500).json({ message: 'Server error' });
+    return res.status(500).json({success: false, message: error.message });
   }
 };
 
@@ -33,10 +32,10 @@ export const getCategories = async (req, res) => {
       return res.status(404).json({ message: 'No categories found.' });
     }
 
-    return res.status(200).json(categories);
+    return res.status(200).json({success: true,categories});
   } catch (error) {
     console.error(error);
-    return res.status(500).json({ message: 'Server error' });
+    return res.status(500).json({success: false, message: error.message });
   }
 };
 
@@ -49,10 +48,9 @@ export const getCategoryById = async (req, res) => {
       return res.status(404).json({ message: 'Category not found' });
     }
     
-    return res.status(200).json(category);
+    return res.status(200).json({success: true,category});
   } catch (error) {
-    console.error(error);
-    return res.status(500).json({ message: 'Server error' });
+    return res.status(500).json({success: true, message: error.message });
   }
 };
 
@@ -71,10 +69,10 @@ export const updateCategory = async (req, res) => {
       return res.status(404).json({ message: 'Category not found' });
     }
 
-    return res.status(200).json({ message: 'Category updated successfully', category });
+    return res.status(200).json({ success: true, message: 'Category updated successfully', category });
   } catch (error) {
     console.error(error);
-    return res.status(500).json({ message: 'Server error' });
+    return res.status(500).json({ success: false, message: error.message });
   }
 };
 
@@ -87,9 +85,9 @@ export const deleteCategory = async (req, res) => {
       return res.status(404).json({ message: 'Category not found' });
     }
 
-    return res.status(200).json({ message: 'Category deleted successfully' });
+    return res.status(200).json({success: true, message: 'Category deleted successfully' });
   } catch (error) {
     console.error(error);
-    return res.status(500).json({ message: 'Server error' });
+    return res.status(500).json({success: false, message: error.message });
   }
 };

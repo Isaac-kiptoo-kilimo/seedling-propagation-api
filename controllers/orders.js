@@ -32,11 +32,10 @@ export const createOrder = async (req, res) => {
       { path: 'placedBy', select: 'fullName' }
     ]);
 
-    return res.status(201).json({ message: 'Order placed successfully', order });
+    return res.status(201).json({success: true, message: 'Order placed successfully', order });
 
   } catch (error) {
-    console.error(error);
-    return res.status(500).json({ message: error.message });
+    return res.status(500).json({success: false, message: error.message });
   }
 };
 
@@ -52,11 +51,10 @@ export const getOrders = async (req, res) => {
       return res.status(404).json({ message: 'No orders found.' });
     }
 
-    return res.status(200).json(orders);
+    return res.status(200).json({success: true,orders});
 
   } catch (error) {
-    console.error(error);
-    return res.status(500).json({ message: 'Server error' });
+    return res.status(500).json({success: false, message: error.message });
   }
 };
 
@@ -73,12 +71,10 @@ export const getUserOrders = async (req, res) => {
     if (!orders.length) {
       return res.status(404).json({ message: 'No orders found for this user.' });
     }
-
-    return res.status(200).json(orders);
+    return res.status(200).json({success: true, orders});
 
   } catch (error) {
-    console.error(error);
-    return res.status(500).json({ message: 'Server error' });
+    return res.status(500).json({success: false, message: error.message });
   }
 };
 
@@ -96,11 +92,10 @@ export const getOrdersForUser = async (req, res) => {
       return res.status(404).json({ message: 'No orders found for this user.' });
     }
 
-    return res.status(200).json(orders);
+    return res.status(200).json({success: true, orders});
 
   } catch (error) {
-    console.error(error);
-    return res.status(500).json({ message: 'Server error' });
+    return res.status(500).json({success: false, message: 'Server error' });
   }
 };
 
@@ -116,14 +111,13 @@ export const getOrderById = async (req, res) => {
       return res.status(404).json({ message: 'Order not found' });
     }
 
-    return res.status(200).json(order);
+    return res.status(200).json({success: true, order});
 
   } catch (error) {
     console.error(error);
-    return res.status(500).json({ message: 'Server error' });
+    return res.status(500).json({success: false, message: error.message });
   }
 };
-
 
 // Complete Payment
 export const completePayment = async (req, res) => {
@@ -142,11 +136,11 @@ export const completePayment = async (req, res) => {
     order.orderStatus = 'Processing';
     await order.save();
 
-    return res.status(200).json({ message: 'Payment completed successfully.', order });
+    return res.status(200).json({success: true, message: 'Payment completed successfully.', order });
 
   } catch (error) {
     console.error(error);
-    return res.status(500).json({ message: 'Server error' });
+    return res.status(500).json({ success: false, message: error.message });
   }
 };
 
@@ -203,11 +197,11 @@ export const completeOrder = async (req, res) => {
     order.completedBy = req.user._id;
     await order.save();
 
-    return res.status(200).json({ message: 'Order delivered and completed successfully.', order });
+    return res.status(200).json({success: true, message: 'Order delivered and completed successfully.', order });
 
   } catch (error) {
     console.error(error);
-    return res.status(500).json({ message: 'Server error' });
+    return res.status(500).json({ success: false, message: error.message });
   }
 };
 
@@ -226,11 +220,11 @@ export const cancelOrder = async (req, res) => {
     order.orderStatus = 'Cancelled';
     await order.save();
 
-    return res.status(200).json({ message: 'Order cancelled successfully.', order });
+    return res.status(200).json({success: true,  message: 'Order cancelled successfully.', order });
 
   } catch (error) {
     console.error(error);
-    return res.status(500).json({ message: 'Server error' });
+    return res.status(500).json({ success: false, message: error.message});
   }
 };
 
@@ -258,6 +252,7 @@ export const getSalesSummary = async (req, res) => {
     ]);
 
     return res.status(200).json({
+      success: true,
       dailySales: daily[0]?.totalSales || 0,
       weeklySales: weekly[0]?.totalSales || 0,
       totalSales: total[0]?.totalSales || 0
@@ -265,7 +260,7 @@ export const getSalesSummary = async (req, res) => {
 
   } catch (error) {
     console.error(error);
-    return res.status(500).json({ message: 'Server error' });
+    return res.status(500).json({ success: false, message: error.message });
   }
 };
 
@@ -277,10 +272,10 @@ export const deleteOrder = async (req, res) => {
       return res.status(404).json({ message: 'Order not found' });
     }
 
-    return res.status(200).json({ message: 'Order deleted successfully', order });
+    return res.status(200).json({success: true, message: 'Order deleted successfully', order });
 
   } catch (error) {
     console.error(error);
-    return res.status(500).json({ message: 'Server error' });
+    return res.status(500).json({success: false, message: error.message });
   }
 };

@@ -1,17 +1,18 @@
 import express from 'express';
 import { isJWTValid } from "../middlewares/jwt.js";
 import { applyOffer, checkStockAndDeactivate, createProduct, deleteProduct, getProductById, getProducts, softDeleteProduct, updateProduct, updateProductStock } from '../controllers/products.js';
+import { isAdminOrStaff } from '../middlewares/auth.js';
 
 const productRoutes = express.Router();
 
-productRoutes.post('/products', isJWTValid , createProduct);
+productRoutes.post('/products', isJWTValid ,isAdminOrStaff, createProduct);
 productRoutes.get('/products',  getProducts);
 productRoutes.get('/products/:id', getProductById);
-productRoutes.put('/products/update/:id', isJWTValid , updateProduct);
-productRoutes.delete('/products/softdelete/:id', isJWTValid , softDeleteProduct);
-productRoutes.delete('/products/delete/:id', isJWTValid , deleteProduct);
-productRoutes.patch('/products/:id/check-stock',isJWTValid, checkStockAndDeactivate);
-productRoutes.patch('/products/:id/update-stock',isJWTValid, updateProductStock);
-productRoutes.patch('/products/:id/apply-offer',isJWTValid, applyOffer);
+productRoutes.put('/products/update/:id', isJWTValid ,isAdminOrStaff, updateProduct);
+productRoutes.delete('/products/softdelete/:id', isJWTValid ,isAdminOrStaff, softDeleteProduct);
+productRoutes.delete('/products/delete/:id', isJWTValid ,isAdminOrStaff, deleteProduct);
+productRoutes.patch('/products/check-stock/:id',isJWTValid,isAdminOrStaff, checkStockAndDeactivate);
+productRoutes.patch('/products/update-stock/:id',isJWTValid,isAdminOrStaff, updateProductStock);
+productRoutes.patch('/products/apply-offer/:id',isJWTValid,isAdminOrStaff, applyOffer);
 
 export default productRoutes;
