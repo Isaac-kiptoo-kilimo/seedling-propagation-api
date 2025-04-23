@@ -5,7 +5,7 @@ import { processOrderProducts } from '../utils/processOrderProducts.js';
 
 export const createOrder = async (req, res) => {
   try {
-    const { products, guestInfo, paymentStatus } = req.body;
+    const { products, guestInfo,placedBy, paymentStatus } = req.body;
 
     if (!products || products.length === 0) {
       return res.status(400).json({ message: 'No products in the order' });
@@ -21,9 +21,9 @@ export const createOrder = async (req, res) => {
       paymentStatus: paymentStatus || 'Pending',
       fulfillmentStatus: 'Pending',
       orderDate: new Date(),
-      placedBy: req.user ? req.user._id : null,
+      placedBy,
       guestInfo: req.user ? null : guestInfo
-    });
+    });    
 
     await order.save();
 
@@ -47,10 +47,14 @@ export const getOrders = async (req, res) => {
       .populate('placedBy', 'fullName')
       .populate('completedBy', 'fullName');
 
-    if (!orders.length) {
-      return res.status(404).json({ message: 'No orders found.' });
-    }
-
+      if (!orders.length) {
+        return res.status(200).json({
+          success: true,
+          orders: [],
+          message: "No orders found for this user."
+        });
+      }      
+      
     return res.status(200).json({success: true,orders});
 
   } catch (error) {
@@ -68,9 +72,13 @@ export const getUserOrders = async (req, res) => {
       .populate('placedBy', 'fullName')
       .populate('completedBy', 'fullName');
 
-    if (!orders.length) {
-      return res.status(404).json({ message: 'No orders found for this user.' });
-    }
+      if (!orders.length) {
+        return res.status(200).json({
+          success: true,
+          orders: [],
+          message: "No orders found for this user."
+        });
+      }      
     return res.status(200).json({success: true, orders});
 
   } catch (error) {
@@ -88,9 +96,13 @@ export const getOrdersForUser = async (req, res) => {
       .populate('placedBy', 'fullName')
       .populate('completedBy', 'fullName');
 
-    if (!orders.length) {
-      return res.status(404).json({ message: 'No orders found for this user.' });
-    }
+      if (!orders.length) {
+        return res.status(200).json({
+          success: true,
+          orders: [],
+          message: "No orders found for this user."
+        });
+      }      
 
     return res.status(200).json({success: true, orders});
 

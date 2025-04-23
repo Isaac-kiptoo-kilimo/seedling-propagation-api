@@ -6,7 +6,7 @@ import { isAdminOrStaff } from '../middlewares/auth.js';
 
 const orderRroutes = express.Router();
 
-orderRroutes.post('/orders',isJWTValid, createOrder);
+orderRroutes.post('/orders', createOrder);
 orderRroutes.get('/orders',isJWTValid, getOrders);
 orderRroutes.get('/orders/user', isJWTValid , getUserOrders);
 orderRroutes.get('/orders/user/:userId',isJWTValid, isAdminOrStaff, getOrdersForUser);

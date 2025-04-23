@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
 import bcrypt from "bcrypt";
+import { type } from "os";
 
 const userSchema = new mongoose.Schema({
   fullName: {
@@ -25,21 +26,19 @@ const userSchema = new mongoose.Schema({
   },
   role: {
     type: String,
-    enum: ['admin', 'staff', 'customer'],
-    default: 'customer',
+    enum: ["admin", "staff", "customer"],
+    default: "customer",
   },
+  county: { type: String },
+  streetAddress: { type: String },
   isActive: {
     type: Boolean,
     default: true,
   },
-  createdAt: {
-    type: Date,
-    default: Date.now,
-  },
-});
+},{ timestamps: true });
 
 // Password hash pre-save
-userSchema.pre('save', async function (next) {
+userSchema.pre("save", async function (next) {
   if (!this.isModified("password")) return next();
   const salt = await bcrypt.genSalt(10);
   this.password = await bcrypt.hash(this.password, salt);
@@ -50,5 +49,13 @@ userSchema.pre('save', async function (next) {
 userSchema.methods.validPassword = async function (password) {
   return await bcrypt.compare(password, this.password);
 };
+
+// Remove password from API responses
+userSchema.set("toJSON", {
+  transform: function (doc, ret) {
+    delete ret.password;
+    return ret;
+  }
+});
 
 export default mongoose.model("User", userSchema);

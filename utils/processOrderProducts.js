@@ -3,9 +3,9 @@ import Product from '../models/products.js';
 export const processOrderProducts = async (products) => {
   let totalAmount = 0;
   const processedProducts = [];
-
+  
   for (const item of products) {
-    const product = await Product.findById(item.product);
+    const product = await Product.findById(item._id);
     if (!product) throw new Error(`Product not found: ${item.product}`);
     if (product.productQuantity < item.quantity) {
       throw new Error(`Insufficient stock for ${product.productName}`);

@@ -11,7 +11,8 @@ const orderSchema = new mongoose.Schema({
     fullName: { type: String },
     email: { type: String },
     phoneNumber: { type: String },
-    deliveryAddress: { type: String }
+    county: { type: String },
+    streetAddress: { type: String }
   },
 
   // Product details

@@ -12,8 +12,9 @@ export const getUsers=async(req, res)=>{
   try {
     const users = await User.find({ role: "customer", isActive: true });
     if (users.length === 0) {
-      return res.status(404).json({ success: false, message: "No active users found" });
+      return res.status(200).json({ success: true,users: [], message: "No active users found" });
     }
+
     res.status(200).json({success:true, message:"Retrieved all users successfully ", users})
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -113,9 +114,14 @@ export const restoreUser = async (req, res) => {
 export const getStaff = async (req, res) => {
   try {
     const staff = await User.find({ role: "staff" ,isActive: true});
-    if(staff.length===0){
-      return res.status(404).json({ success: false, message: "No active staff found" });
+    if (staff.length === 0) {
+      return res.status(200).json({
+        success: true,
+        staff: [],
+        message: "No active staff found"
+      });
     }
+    
     res.status(200).json({ success: true, message: "Retrieved all staff successfully", staff });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });

@@ -66,11 +66,14 @@ export const getProducts = async (req, res) => {
       .populate("createdBy", "fullName email")
       .exec();
 
-    if (!products || products.length === 0) {
-      return res
-        .status(404)
-        .json({ message: "No products found matching your criteria." });
-    }
+      if (products.length === 0) {
+        return res.status(200).json({
+          success: true,
+          products: [],
+          message: "No products found matching your criteria."
+        });
+      }
+      
     return res.status(200).json({ success: true, products });
   } catch (error) {
     console.error(error);
