@@ -1,5 +1,7 @@
 import Order from '../models/orders.js';
+import { sendWhatsAppMessage } from '../services/whatsapp.service.js';
 import generatePurchaseOrderNumber from '../utils/generatePurchaseOrderNumber.js';
+import { formatOrderSummary } from '../utils/orderSummary.js';
 
 import { processOrderProducts } from '../utils/processOrderProducts.js';
 
@@ -31,6 +33,15 @@ export const createOrder = async (req, res) => {
       { path: 'products.product', select: 'productName price offerPrice onOffer' },
       { path: 'placedBy', select: 'fullName' }
     ]);
+
+    // const phoneNumber = order.placedBy?.phoneNumber || order.guestInfo?.phoneNumber;
+    // const message = formatOrderSummary(order);
+    // console.log("phoneNumber",phoneNumber);
+    // console.log("message",message);
+    
+    // if (phoneNumber) {
+    //   await sendWhatsAppMessage(phoneNumber, message);
+    // }
 
     return res.status(201).json({success: true, message: 'Order placed successfully', order });
 
@@ -142,6 +153,9 @@ export const completePayment = async (req, res) => {
     if (order.paymentStatus === 'Completed') {
       return res.status(400).json({ message: 'Payment already completed.' });
     }
+    if (order.orderStatus === 'Cancelled') {
+      return res.status(400).json({ message: 'Can no make Payment for canceled Order.' });
+    }
 
     order.paymentStatus = 'Completed';
     order.fulfillmentStatus = 'Processing';
@@ -223,6 +237,14 @@ export const cancelOrder = async (req, res) => {
     const order = await Order.findById(req.params.id);
     if (!order) {
       return res.status(404).json({ message: 'Order not found' });
+    }
+
+    if (order.orderStatus === 'Cancelled') {
+      return res.status(400).json({ message: 'This order has already been cancelled.' });
+    }
+
+    if (order.paymentStatus === 'Completed') {
+      return res.status(400).json({ message: 'Cannot cancel already paid order, contact admin.' });
     }
 
     if (order.orderStatus === 'Completed') {

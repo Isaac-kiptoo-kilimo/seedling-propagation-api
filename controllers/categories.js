@@ -1,5 +1,5 @@
 import Category from "../models/categories.js";
-
+import Product from '../models/products.js';
 // Create a new category
 export const createCategory = async (req, res) => {
   try {
@@ -32,7 +32,18 @@ export const getCategories = async (req, res) => {
       return res.status(404).json({ message: 'No categories found.' });
     }
 
-    return res.status(200).json({success: true,categories});
+    const categoryData = await Promise.all(
+      categories.map(async (category) => {
+        const products = await Product.find({ category: category._id });
+        return {
+          ...category._doc,
+          productCount: products.length,
+          products,
+        };
+      })
+    );
+
+    return res.status(200).json({success: true,categories:categoryData});
   } catch (error) {
     console.error(error);
     return res.status(500).json({success: false, message: error.message });
@@ -79,15 +90,27 @@ export const updateCategory = async (req, res) => {
 // Delete a category
 export const deleteCategory = async (req, res) => {
   try {
-    const category = await Category.findByIdAndDelete(req.params.id);
+    const category = await Category.findById(req.params.id);
     
     if (!category) {
       return res.status(404).json({ message: 'Category not found' });
     }
 
-    return res.status(200).json({success: true, message: 'Category deleted successfully' });
+    const associatedProducts = await Product.find({ category: req.params.id });
+
+    if (associatedProducts.length > 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Cannot delete category. It is associated with one or more products.'
+      });
+    }
+
+    await Category.findByIdAndDelete(req.params.id);
+
+    return res.status(200).json({ success: true, message: 'Category deleted successfully' });
   } catch (error) {
     console.error(error);
-    return res.status(500).json({success: false, message: error.message });
+    return res.status(500).json({ success: false, message: error.message });
   }
 };
+
