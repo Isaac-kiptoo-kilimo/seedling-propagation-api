@@ -1,7 +1,7 @@
 import express from "express";
 import { createUser, createStaff, getUsers, getUser, updateUser, deleteUser, softDeleteUser, getStaff, getOneStaff, updateStaff, deleteStaff, softDeleteStaff, restoreUser, restoreStaff } from "../controllers/users.js";
 import { validateGetUser, validateStaffData, validateUserData } from "../middlewares/validations/user.js";
-import { isAdmin } from "../middlewares/auth.js";
+import { isAdmin, isAdminOrStaff } from "../middlewares/auth.js";
 import { isJWTValid } from "../middlewares/jwt.js";
 
 const userRoutes = express.Router();
@@ -17,7 +17,7 @@ userRoutes.delete("/user/delete/:userId",isJWTValid,isAdmin, deleteUser);
 
 // Staff routes
 userRoutes.post("/staff",isJWTValid,isAdmin, validateStaffData,createStaff);
-userRoutes.patch("/staff/update/:staffId",isJWTValid,isAdmin, updateStaff);
+userRoutes.patch("/staff/update/:staffId",isJWTValid,isAdminOrStaff, updateStaff);
 userRoutes.get("/staff",isJWTValid,isAdmin, getStaff);
 userRoutes.get("/staff/:staffId",isJWTValid, getOneStaff);
 userRoutes.patch("/staff/softDelete/:staffId",isJWTValid,isAdmin, softDeleteStaff);

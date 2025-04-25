@@ -54,30 +54,73 @@ export const createProduct = async (req, res) => {
 
 export const getProducts = async (req, res) => {
   try {
-    const { category, onOffer, isActive } = req.query;
+    const {
+      category,
+      isActive,
+      search,
+      sortBy,
+      sortOrder = "asc",
+      page = 1,
+      limit = 10,
+      minPrice,
+      maxPrice,
+    } = req.query;
 
     const filter = {};
+
     if (category) filter.category = category;
-    if (onOffer !== undefined) filter.onOffer = onOffer;
-    if (isActive !== undefined) filter.isActive = isActive;
+    if (isActive !== undefined) filter.isActive = isActive === "true";
+    if (minPrice) filter.price = { $gte: Number(minPrice) };
+    if (maxPrice) filter.price = { ...filter.price, $lte: Number(maxPrice) };
+
+    if (search) {
+      filter.$or = [
+        { productName: { $regex: search, $options: "i" } },
+        { productDescription: { $regex: search, $options: "i" } },
+      ];
+    }
+
+    const sortOptions = {};
+    if (sortBy) {
+      sortOptions[sortBy] = sortOrder === "desc" ? -1 : 1;
+    }
+
+    const skip = (Number(page) - 1) * Number(limit);
 
     const products = await Product.find(filter)
       .populate("category", "name")
       .populate("createdBy", "fullName email")
+      .sort(sortOptions)
+      .skip(skip)
+      .limit(Number(limit))
       .exec();
 
-      if (products.length === 0) {
-        return res.status(200).json({
-          success: true,
-          products: [],
-          message: "No products found matching your criteria."
-        });
-      }
-      
-    return res.status(200).json({ success: true, products });
+    const totalCount = await Product.countDocuments(filter);
+
+    if (products.length === 0) {
+      return res.status(200).json({
+        success: true,
+        products: [],
+        totalCount,
+        totalPages: Math.ceil(totalCount / limit),
+        currentPage: Number(page),
+        message: "No products found matching your criteria.",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      products,
+      totalCount,
+      totalPages: Math.ceil(totalCount / limit),
+      currentPage: Number(page),
+    });
   } catch (error) {
-    console.error(error);
-    return res.status(500).json({ success: false, message: error.message });
+    console.error("Error fetching products:", error);
+    return res.status(500).json({
+      success: false,
+      message: error.message || "Internal server error",
+    });
   }
 };
 

@@ -64,6 +64,9 @@ export const updateUser = async (req, res) => {
     );
     if (!update) return res.status(404).json({ success: false, message: "User not found" });
 
+    console.log("req.body,", req.body);
+    console.log("update user,", update);
+    
     res.status(200).json({ success: true, message: "User updated successfully", user: update });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
