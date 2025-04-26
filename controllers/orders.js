@@ -1,4 +1,5 @@
 import Order from '../models/orders.js';
+import TrackingUpdate from '../models/trackingUpdate.js';
 import { sendWhatsAppMessage } from '../services/whatsapp.service.js';
 import generatePurchaseOrderNumber from '../utils/generatePurchaseOrderNumber.js';
 import { formatOrderSummary } from '../utils/orderSummary.js';
@@ -170,32 +171,133 @@ export const completePayment = async (req, res) => {
   }
 };
 
-// 🚚 Fulfill Order
-// export const fulfillOrder = async (req, res) => {
-//   try {
-//     const order = await Order.findById(req.params.id);
-//     if (!order) {
-//       return res.status(404).json({ message: 'Order not found' });
-//     }
+// Order In Transit
+export const orderInTransit = async (req, res) => {
+  try {
+    const order = await Order.findById(req.params.id);
+    if (!order) {
+      return res.status(404).json({ message: 'Order not found' });
+    }
 
-//     if (order.paymentStatus !== 'Completed') {
-//       return res.status(400).json({ message: 'Cannot fulfill order — payment not completed.' });
-//     }
+    if (order.paymentStatus !== 'Completed') {
+      return res.status(400).json({ message: 'Cannot move order to In Transit — payment not completed.' });
+    }
 
-//     if (order.fulfillmentStatus === 'Completed') {
-//       return res.status(400).json({ message: 'Order already fulfilled.' });
-//     }
+    if (order.fulfillmentStatus === 'Delivered' || order.fulfillmentStatus === 'Completed' || order.orderStatus === 'Completed' ) {
+      return res.status(400).json({ message: 'Order already Delivered. and Completed' });
+    }
 
-//     order.fulfillmentStatus = 'Completed';
-//     await order.save();
+    order.fulfillmentStatus = 'InTransit';
+    await order.save();
 
-//     return res.status(200).json({ message: 'Order fulfillment marked as completed.', order });
+    return res.status(200).json({ message: 'This order is in transit now.', order });
 
-//   } catch (error) {
-//     console.error(error);
-//     return res.status(500).json({ message: 'Server error' });
-//   }
-// };
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: 'Server error' });
+  }
+};
+
+// Track Order
+export const trackOrder = async (req, res) => {
+  try {
+    const { purchaseNumber } = req.query;
+
+    if (!purchaseNumber) {
+      return res.status(400).json({ success: false, message: 'Purchase number is required' });
+    }
+
+    const order = await Order.findOne({ purchaseNumber }).select(
+      'purchaseNumber fulfillmentStatus orderDate'
+    );
+
+    if (!order) {
+      return res.status(404).json({ success: false, message: 'Order not found' });
+    }
+
+    const trackingHistory = await TrackingUpdate.find({ order: order._id })
+      .select('status notes location createdAt')
+      .sort({ createdAt: 1 });
+
+    return res.status(200).json({
+      success: true,
+      message: 'Order status retrieved',
+      orderStatus: {
+        purchaseNumber: order.purchaseNumber,
+        currentStatus: order.fulfillmentStatus,
+        orderDate: order.orderDate,
+        trackingHistory: trackingHistory || []
+      }
+    });
+
+  } catch (error) {
+    console.error('Track order error:', error);
+    return res.status(500).json({ success: false, message: 'Server error' });
+  }
+};
+
+export const confirmDelivery = async (req, res) => {
+  try {
+    const { purchaseNumber, signature, deliveryNotes, receivedBy, location } = req.body;
+
+    if (!purchaseNumber || !signature) {
+      return res.status(400).json({ success: false, message: 'Purchase number and signature are required' });
+    }
+
+    const order = await Order.findOne({ purchaseNumber }).populate('placedBy', 'fullName');
+
+    if (!order) {
+      return res.status(404).json({ success: false, message: 'Order not found' });
+    }
+
+    if (order.fulfillmentStatus === 'Delivered' || order.fulfillmentStatus === 'Completed') {
+      return res.status(404).json({ success: false, message: 'Order already Delivered & confirmed' });
+    }
+
+    const expectedName = order.placedBy?.fullName || order.guestInfo?.fullName;
+
+    if (!expectedName) {
+      return res.status(400).json({ success: false, message: 'Order does not have a valid placer (guest or registered).' });
+    }
+
+    if (receivedBy?.toLowerCase().trim() !== expectedName.toLowerCase().trim()) {
+      return res.status(403).json({ success: false, message: 'Only the person who placed the order can confirm delivery.' });
+    }
+
+    order.deliveryConfirmation = {
+      signature,
+      confirmedAt: new Date(),
+      notes: deliveryNotes || '',
+      receivedBy,
+      confirmedBy: req.user ? req.user._id : null
+    };
+
+    order.fulfillmentStatus = 'Delivered';
+
+    await order.save();
+
+    const trackingUpdate = new TrackingUpdate({
+      order: order._id,
+      status: 'Delivered',
+      notes: `Delivered and signed for by ${receivedBy}. ${deliveryNotes || ''}`,
+      updatedBy: req.user ? req.user._id : null,
+      location: location || 'Delivery address'
+    });
+
+    await trackingUpdate.save();
+
+    return res.status(200).json({
+      success: true,
+      message: 'Delivery confirmed',
+      orderStatus: order.fulfillmentStatus
+    });
+
+  } catch (error) {
+    console.error('Confirm delivery error:', error);
+    return res.status(500).json({ success: false, message: 'Server error' });
+  }
+};
+
 
 // Complete Entire Order (after payment + fulfillment)
 export const completeOrder = async (req, res) => {
@@ -207,6 +309,9 @@ export const completeOrder = async (req, res) => {
 
     if (order.paymentStatus !== 'Completed') {
       return res.status(400).json({ message: 'Cannot complete order — payment not completed.' });
+    }
+    if (order.fulfillmentStatus !== 'InTransit') {
+      return res.status(400).json({ message: 'Cannot complete order — Delivery has no started.' });
     }
 
     if (order.fulfillmentStatus === 'Completed') {
@@ -222,6 +327,17 @@ export const completeOrder = async (req, res) => {
     order.completionDate = new Date();
     order.completedBy = req.user._id;
     await order.save();
+
+       // Create tracking history entry
+       const trackingUpdate = new TrackingUpdate({
+        order: order._id,
+        status: fulfillmentStatus || order.fulfillmentStatus,
+        notes: notes || '',
+        updatedBy: req.user._id,
+        location: req.body.location || 'Not specified'
+      });
+  
+      await trackingUpdate.save();
 
     return res.status(200).json({success: true, message: 'Order delivered and completed successfully.', order });
 
@@ -247,12 +363,27 @@ export const cancelOrder = async (req, res) => {
       return res.status(400).json({ message: 'Cannot cancel already paid order, contact admin.' });
     }
 
+    if (order.fulfillmentStatus === 'Completed' || order.fulfillmentStatus === 'InTransit' || order.fulfillmentStatus === 'Delivered') {
+      return res.status(400).json({ message: 'Cannot cancel this order, contact admin.' });
+    }
+
     if (order.orderStatus === 'Completed') {
       return res.status(400).json({ message: 'Cannot cancel a completed order.' });
     }
 
     order.orderStatus = 'Cancelled';
     await order.save();
+
+       // Create tracking history entry
+       const trackingUpdate = new TrackingUpdate({
+        order: order._id,
+        status: fulfillmentStatus || order.fulfillmentStatus || order.orderStatus ,
+        notes: notes || '',
+        updatedBy: req.user._id,
+        location: req.body.location || 'Not specified'
+      });
+  
+      await trackingUpdate.save();
 
     return res.status(200).json({success: true,  message: 'Order cancelled successfully.', order });
 

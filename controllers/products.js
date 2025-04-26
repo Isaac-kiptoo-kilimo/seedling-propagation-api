@@ -328,6 +328,9 @@ export const applyOffer = async (req, res) => {
     product.onOffer = true;
     product.offerPrice = offerPrice;
 
+    console.log("offerPrice>>>>>>>>",offerPrice);
+    console.log("product>>>>>>>>",product);
+    
     await product.save();
     return res
       .status(200)

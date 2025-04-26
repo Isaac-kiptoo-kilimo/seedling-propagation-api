@@ -37,7 +37,7 @@ const orderSchema = new mongoose.Schema({
   },
   fulfillmentStatus: {
     type: String,
-    enum: ['Pending', 'Processing', 'Completed', 'Cancelled'],
+    enum: ['Pending', 'Processing','InTransit','Delivered', 'Completed', 'Cancelled'],
     default: 'Pending'
   },
   orderStatus: {
@@ -45,6 +45,17 @@ const orderSchema = new mongoose.Schema({
     enum: ['Pending', 'Processing', 'Completed', 'Cancelled'],
     default: 'Pending'
   },
+    // New field for delivery confirmation with e-signature
+    deliveryConfirmation: {
+      signature: String,
+      confirmedAt: Date,
+      notes: String,
+      receivedBy: String,
+      confirmedBy: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User'
+      }
+    },
 
   // Audit fields
   completedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
