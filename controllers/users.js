@@ -116,7 +116,7 @@ export const restoreUser = async (req, res) => {
 
 export const getStaff = async (req, res) => {
   try {
-    const staff = await User.find({ role: "staff" ,isActive: true});
+    const staff = await User.find({ role: "staff"});
     if (staff.length === 0) {
       return res.status(200).json({
         success: true,
@@ -130,7 +130,6 @@ export const getStaff = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
-
 
 export const createStaff = async (req, res) => {
   try {

@@ -190,6 +190,16 @@ export const orderInTransit = async (req, res) => {
     order.fulfillmentStatus = 'InTransit';
     await order.save();
 
+     // Create tracking history entry
+     const trackingUpdate = new TrackingUpdate({
+      order: order._id,
+      status: order.orderStatus,
+      notes: `This order has been to in transit by ${req.user._id}`,
+      updatedBy: req.user._id
+    });
+    
+    await trackingUpdate.save();
+
     return res.status(200).json({ message: 'This order is in transit now.', order });
 
   } catch (error) {
@@ -331,12 +341,11 @@ export const completeOrder = async (req, res) => {
        // Create tracking history entry
        const trackingUpdate = new TrackingUpdate({
         order: order._id,
-        status: fulfillmentStatus || order.fulfillmentStatus,
-        notes: notes || '',
+        status: order.orderStatus,
+        notes: `This order has been completed by ${req.user._id}`,
         updatedBy: req.user._id,
         location: req.body.location || 'Not specified'
       });
-  
       await trackingUpdate.save();
 
     return res.status(200).json({success: true, message: 'Order delivered and completed successfully.', order });
@@ -377,10 +386,9 @@ export const cancelOrder = async (req, res) => {
        // Create tracking history entry
        const trackingUpdate = new TrackingUpdate({
         order: order._id,
-        status: fulfillmentStatus || order.fulfillmentStatus || order.orderStatus ,
-        notes: notes || '',
-        updatedBy: req.user._id,
-        location: req.body.location || 'Not specified'
+        status: order.orderStatus ,
+        notes: `This order has been cancelled by ${req.user._id}`,
+        updatedBy: req.user ? req.user._id : null
       });
   
       await trackingUpdate.save();

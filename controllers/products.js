@@ -95,7 +95,25 @@ export const getProducts = async (req, res) => {
       .limit(Number(limit))
       .exec();
 
-    const totalCount = await Product.countDocuments(filter);
+      const updatedProducts = products.map(product => {
+        if (!product.onOffer) {
+          product.offerPrice = undefined;
+        }
+        return product;
+      });
+  
+      const totalCount = await Product.countDocuments(filter);
+  
+      if (updatedProducts.length === 0) {
+        return res.status(200).json({
+          success: true,
+          products: [],
+          totalCount,
+          totalPages: Math.ceil(totalCount / limit),
+          currentPage: Number(page),
+          message: "No products found matching your criteria.",
+        });
+      }
 
     if (products.length === 0) {
       return res.status(200).json({
@@ -110,7 +128,7 @@ export const getProducts = async (req, res) => {
 
     return res.status(200).json({
       success: true,
-      products,
+      products:updatedProducts,
       totalCount,
       totalPages: Math.ceil(totalCount / limit),
       currentPage: Number(page),
@@ -153,6 +171,8 @@ export const updateProduct = async (req, res) => {
       productQuantity,
       productImage,
       category,
+      onOffer,
+      offerPrice,
     } = req.body;
 
     const categoryFound = await Category.findById(category);
@@ -177,6 +197,8 @@ export const updateProduct = async (req, res) => {
         productQuantity,
         productImage,
         category,
+        onOffer,
+        offerPrice,
       },
       { new: true }
     )
@@ -335,6 +357,26 @@ export const applyOffer = async (req, res) => {
     return res
       .status(200)
       .json({ success: true, message: "Offer applied successfully", product });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ success: true, message: error.message });
+  }
+};
+
+export const removeOffer = async (req, res) => {
+  try {
+
+    const product = await Product.findById(req.params.id);
+    if (!product) {
+      return res.status(404).json({ message: "Product not found" });
+    }
+
+    product.onOffer = false;
+    
+    await product.save();
+    return res
+      .status(200)
+      .json({ success: true, message: "Offer removed successfully", product });
   } catch (error) {
     console.error(error);
     return res.status(500).json({ success: true, message: error.message });
