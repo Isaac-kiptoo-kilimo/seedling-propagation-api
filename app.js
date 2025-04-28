@@ -10,29 +10,39 @@ const app = express();
 
 // middlewares
 
-app.use(cors());
+// Only one CORS setup
+const allowedOrigins = [
+  'http://localhost:3000',
+  'https://seedling-propogation-store-ui.vercel.app',
+];
+
+app.use(cors({
+  origin: (origin, callback) => {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true,
+}));
+
 app.use(bodyParser.json());
 
+app.use("/api", [...appRoutes]);
 
-app.use("/api",[
-  ...appRoutes
-]);
-
-// Set up Cloudinary with your credentials from the environment variables
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
   api_key: process.env.CLOUDINARY_API_KEY,
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
-
-
 // Error Handling
 app.use((err, req, res, next) => {
-      return res.status(err.status || 500).json({
-          success: false,
-          message: err.message || "An error occurred processing your request. Try again",
-      });
+  return res.status(err.status || 500).json({
+    success: false,
+    message: err.message || "An error occurred processing your request. Try again",
+  });
 });
-// End of error handling
+
 export { app, logger };
