@@ -1,10 +1,10 @@
 import mongoose from 'mongoose';
 
 const auditLogSchema = new mongoose.Schema({
-  action: { type: String, required: true }, // e.g. "CREATE_PRODUCT", "UPDATE_PRODUCT"
-  collectionName: { type: String, required: true }, // e.g. "products"
-  documentId: { type: mongoose.Schema.Types.ObjectId, required: true }, // affected document
-  performedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }, // who did it
+  action: { type: String, required: true },
+  collectionName: { type: String, required: true },
+  documentId: { type: mongoose.Schema.Types.ObjectId, required: true },
+  performedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
   payload: { type: Object },
   timestamp: { type: Date, default: Date.now }
 });

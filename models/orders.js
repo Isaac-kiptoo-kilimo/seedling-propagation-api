@@ -24,6 +24,24 @@ const orderSchema = new mongoose.Schema({
   // Total order price
   totalAmount: { type: Number, required: true },
 
+   // Payment details
+   paymentMethod: {
+    type: String,
+    enum: ['Cash', 'Mpesa'],
+    required: true
+  },
+  paymentDetails: {
+    cash: {
+      amount: { type: Number },
+      completedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }
+    },
+    mpesa: {
+      transactionCode: { type: String },
+      timePaid: { type: Date },
+      amount: { type: Number },
+      completedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }
+    }
+  },
   // Dates
   orderDate: { type: Date, default: Date.now },
   completionDate: { type: Date },
@@ -60,7 +78,7 @@ const orderSchema = new mongoose.Schema({
   // Audit fields
   completedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
   cancelledBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }
-});
+},{ timestamps: true });
 
 const Order = mongoose.model('Order', orderSchema);
 

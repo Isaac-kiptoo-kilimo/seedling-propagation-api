@@ -10,7 +10,7 @@ const counterSchema = new mongoose.Schema({
     type: Number,
     required: true
   }
-});
+},{ timestamps: true });
 
 const Counter = mongoose.model('Counter', counterSchema);
 
