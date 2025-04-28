@@ -21,13 +21,12 @@ const forgotPasswordRequestSchema = new mongoose.Schema({
     type: Date,
     default: Date.now,
   },
-});
+},{ timestamps: true });
 
 const ForgotPasswordRequest = mongoose.model("ForgotPasswordRequest", forgotPasswordRequestSchema);
 
 export const createRequest = async function (user) {
   let expiredAt = new Date();
-  // Assuming env var like "600s" (600 seconds)
   const lifetime = parseInt(process.env.FORGOT_PASSWORD_CODE_LIFETIME.slice(0, -1)); 
   expiredAt.setSeconds(expiredAt.getSeconds() + lifetime);
 

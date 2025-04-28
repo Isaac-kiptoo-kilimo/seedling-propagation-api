@@ -1,6 +1,6 @@
 import express from "express";
 import { createUser, createStaff, getUsers, getUser, updateUser, deleteUser, softDeleteUser, getStaff, getOneStaff, updateStaff, deleteStaff, softDeleteStaff, restoreUser, restoreStaff } from "../controllers/users.js";
-import { validateGetUser, validateStaffData, validateUserData } from "../middlewares/validations/user.js";
+import { validateStaffData, validateUserData } from "../middlewares/validations/user.js";
 import { isAdmin, isAdminOrStaff } from "../middlewares/auth.js";
 import { isJWTValid } from "../middlewares/jwt.js";
 
@@ -26,4 +26,3 @@ userRoutes.delete("/staff/delete/:staffId",isJWTValid,isAdmin, deleteStaff);
 
 export default userRoutes;
 
-  

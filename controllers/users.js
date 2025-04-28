@@ -8,18 +8,32 @@ function generateRandomNumberString(firstName) {
   const randString = capitalizedFirstName + '@' + timestamp;
   return randString;
 }
-export const getUsers=async(req, res)=>{
+export const getUsers = async (req, res) => {
   try {
-    const users = await User.find({ role: "customer", isActive: true });
-    if (users.length === 0) {
-      return res.status(200).json({ success: true,users: [], message: "No active users found" });
-    }
+    const { page = 1, limit = 10 } = req.query;
 
-    res.status(200).json({success:true, message:"Retrieved all users successfully ", users})
+    const filter = { role: "customer", isActive: true };
+
+    const totalUsers = await User.countDocuments(filter);
+
+    const users = await User.find(filter)
+      .sort({ createdAt: -1 })
+      .skip((page - 1) * limit)
+      .limit(Number(limit));
+
+    res.status(200).json({
+      success: true,
+      message: "Retrieved all users successfully",
+      users,
+      currentPage: Number(page),
+      totalPages: Math.ceil(totalUsers / limit),
+      totalUsers,
+    });
+    
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
-  }
+};
   
 export const createUser = async (req, res) => {
   try {
@@ -116,21 +130,30 @@ export const restoreUser = async (req, res) => {
 
 export const getStaff = async (req, res) => {
   try {
-    const staff = await User.find({ role: "staff" ,isActive: true});
-    if (staff.length === 0) {
-      return res.status(200).json({
-        success: true,
-        staff: [],
-        message: "No active staff found"
-      });
-    }
+    const { page = 1, limit = 10 } = req.query;
+
+    const filter = { role: "staff" };
+
+    const totalStaff = await User.countDocuments(filter);
+
+    const staff = await User.find(filter)
+      .sort({ createdAt: -1 }) // newest staff first
+      .skip((page - 1) * limit)
+      .limit(Number(limit));
+
+    res.status(200).json({
+      success: true,
+      message: "Retrieved all staff successfully",
+      staff,
+      currentPage: Number(page),
+      totalPages: Math.ceil(totalStaff / limit),
+      totalStaff,
+    });
     
-    res.status(200).json({ success: true, message: "Retrieved all staff successfully", staff });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
 };
-
 
 export const createStaff = async (req, res) => {
   try {

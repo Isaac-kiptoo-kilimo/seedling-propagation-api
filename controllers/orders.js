@@ -51,26 +51,39 @@ export const createOrder = async (req, res) => {
   }
 };
 
-// Get all orders (optional filters)
 export const getOrders = async (req, res) => {
   try {
-    const orders = await Order.find()
+    const { page = 1, limit = 10, search = '' } = req.query;
+
+    // Build search criteria
+    const searchQuery = {};
+    if (search) {
+      searchQuery.purchaseNumber = { $regex: search, $options: 'i' };
+    }
+
+    // Get total number of matching orders
+    const totalOrders = await Order.countDocuments(searchQuery);
+
+    // Fetch paginated orders
+    const orders = await Order.find(searchQuery)
       .populate('products.product', 'productName price offerPrice onOffer')
       .populate('placedBy', 'fullName')
-      .populate('completedBy', 'fullName');
+      .populate('completedBy', 'fullName')
+      .sort({ createdAt: -1 }) // latest orders first
+      .skip((page - 1) * limit)
+      .limit(Number(limit));
 
-      if (!orders.length) {
-        return res.status(200).json({
-          success: true,
-          orders: [],
-          message: "No orders found for this user."
-        });
-      }      
-      
-    return res.status(200).json({success: true,orders});
+    return res.status(200).json({
+      success: true,
+      orders,
+      currentPage: Number(page),
+      totalPages: Math.ceil(totalOrders / limit),
+      totalOrders,
+    });
 
   } catch (error) {
-    return res.status(500).json({success: false, message: error.message });
+    console.error(error);
+    return res.status(500).json({ success: false, message: error.message });
   }
 };
 
@@ -78,27 +91,34 @@ export const getOrders = async (req, res) => {
 export const getUserOrders = async (req, res) => {
   try {
     const { user } = req;
+    const { page = 1, limit = 10 } = req.query;
 
-    const orders = await Order.find({ placedBy: user._id })
+    const filter = { placedBy: user._id };
+
+    const totalOrders = await Order.countDocuments(filter);
+
+    const orders = await Order.find(filter)
       .populate('products.product', 'productName price offerPrice onOffer')
       .populate('placedBy', 'fullName')
-      .populate('completedBy', 'fullName');
+      .populate('completedBy', 'fullName')
+      .sort({ createdAt: -1 })
+      .skip((page - 1) * limit)
+      .limit(Number(limit));
 
-      if (!orders.length) {
-        return res.status(200).json({
-          success: true,
-          orders: [],
-          message: "No orders found for this user."
-        });
-      }      
-    return res.status(200).json({success: true, orders});
+    return res.status(200).json({
+      success: true,
+      orders,
+      currentPage: Number(page),
+      totalPages: Math.ceil(totalOrders / limit),
+      totalOrders,
+    });
 
   } catch (error) {
-    return res.status(500).json({success: false, message: error.message });
+    console.error(error);
+    return res.status(500).json({ success: false, message: error.message });
   }
 };
 
-// Get orders for a specific user (by userId)
 export const getOrdersForUser = async (req, res) => {
   try {
     const { userId } = req.params;
@@ -123,7 +143,6 @@ export const getOrdersForUser = async (req, res) => {
   }
 };
 
-// Get a single order by ID
 export const getOrderById = async (req, res) => {
   try {
     const order = await Order.findById(req.params.id)
@@ -143,7 +162,6 @@ export const getOrderById = async (req, res) => {
   }
 };
 
-// Complete Payment
 export const completePayment = async (req, res) => {
   try {
     const order = await Order.findById(req.params.id);
@@ -155,15 +173,53 @@ export const completePayment = async (req, res) => {
       return res.status(400).json({ message: 'Payment already completed.' });
     }
     if (order.orderStatus === 'Cancelled') {
-      return res.status(400).json({ message: 'Can no make Payment for canceled Order.' });
+      return res.status(400).json({ message: 'Cannot make payment for cancelled order.' });
     }
 
+    const { paymentMethod, paymentDetails } = req.body;
+    if (!paymentMethod) {
+      return res.status(400).json({ message: 'Payment method is required.' });
+    }
+
+    if (paymentDetails.amount !== order.totalAmount) {
+      return res.status(400).json({ 
+        message: `Paid amount (${paymentDetails.amount}) does not match order amount (${order.totalAmount}).`
+      });
+    }
+
+    if (paymentMethod === 'Cash') {
+      if (!paymentDetails.amount || !paymentDetails.completedBy) {
+        return res.status(400).json({ message: 'Cash payment details are incomplete.' });
+      }
+      order.paymentMethod = 'Cash'
+      order.paymentDetails.cash = {
+        amount: paymentDetails.amount,
+        completedBy: paymentDetails.completedBy
+      };
+    } else if (paymentMethod === 'Mpesa') {
+      if (!paymentDetails.transactionCode || !paymentDetails.timePaid || !paymentDetails.amount || !paymentDetails.completedBy) {
+        return res.status(400).json({ message: 'MPesa payment details are incomplete.' });
+      }
+      order.paymentMethod = 'Mpesa'
+      order.paymentDetails.mpesa = {
+        transactionCode: paymentDetails.transactionCode,
+        timePaid: paymentDetails.timePaid,
+        amount: paymentDetails.amount,
+        completedBy: paymentDetails.completedBy
+      };
+    } else {
+      return res.status(400).json({ message: 'Invalid payment method.' });
+    }
+
+    console.log("payment method",paymentMethod);
+    
     order.paymentStatus = 'Completed';
     order.fulfillmentStatus = 'Processing';
     order.orderStatus = 'Processing';
+
     await order.save();
 
-    return res.status(200).json({success: true, message: 'Payment completed successfully.', order });
+    return res.status(200).json({ success: true, message: 'Payment completed successfully.', order });
 
   } catch (error) {
     console.error(error);
@@ -171,7 +227,7 @@ export const completePayment = async (req, res) => {
   }
 };
 
-// Order In Transit
+
 export const orderInTransit = async (req, res) => {
   try {
     const order = await Order.findById(req.params.id);
@@ -190,6 +246,16 @@ export const orderInTransit = async (req, res) => {
     order.fulfillmentStatus = 'InTransit';
     await order.save();
 
+     // Create tracking history entry
+     const trackingUpdate = new TrackingUpdate({
+      order: order._id,
+      status: order.orderStatus,
+      notes: `This order has been to in transit by ${req.user._id}`,
+      updatedBy: req.user._id
+    });
+    
+    await trackingUpdate.save();
+
     return res.status(200).json({ message: 'This order is in transit now.', order });
 
   } catch (error) {
@@ -198,7 +264,6 @@ export const orderInTransit = async (req, res) => {
   }
 };
 
-// Track Order
 export const trackOrder = async (req, res) => {
   try {
     const { purchaseNumber } = req.query;
@@ -299,7 +364,6 @@ export const confirmDelivery = async (req, res) => {
 };
 
 
-// Complete Entire Order (after payment + fulfillment)
 export const completeOrder = async (req, res) => {
   try {
     const order = await Order.findById(req.params.id);
@@ -331,12 +395,11 @@ export const completeOrder = async (req, res) => {
        // Create tracking history entry
        const trackingUpdate = new TrackingUpdate({
         order: order._id,
-        status: fulfillmentStatus || order.fulfillmentStatus,
-        notes: notes || '',
+        status: order.orderStatus,
+        notes: `This order has been completed by ${req.user._id}`,
         updatedBy: req.user._id,
         location: req.body.location || 'Not specified'
       });
-  
       await trackingUpdate.save();
 
     return res.status(200).json({success: true, message: 'Order delivered and completed successfully.', order });
@@ -347,7 +410,6 @@ export const completeOrder = async (req, res) => {
   }
 };
 
-// Cancel Order
 export const cancelOrder = async (req, res) => {
   try {
     const order = await Order.findById(req.params.id);
@@ -377,10 +439,9 @@ export const cancelOrder = async (req, res) => {
        // Create tracking history entry
        const trackingUpdate = new TrackingUpdate({
         order: order._id,
-        status: fulfillmentStatus || order.fulfillmentStatus || order.orderStatus ,
-        notes: notes || '',
-        updatedBy: req.user._id,
-        location: req.body.location || 'Not specified'
+        status: order.orderStatus ,
+        notes: `This order has been cancelled by ${req.user._id}`,
+        updatedBy: req.user ? req.user._id : null
       });
   
       await trackingUpdate.save();
@@ -393,7 +454,6 @@ export const cancelOrder = async (req, res) => {
   }
 };
 
-// Get total sales summary (daily, weekly, total)
 export const getSalesSummary = async (req, res) => {
   try {
     const now = new Date();
@@ -429,7 +489,6 @@ export const getSalesSummary = async (req, res) => {
   }
 };
 
-// Delete (soft delete) an order
 export const deleteOrder = async (req, res) => {
   try {
     const order = await Order.findByIdAndDelete(req.params.id);

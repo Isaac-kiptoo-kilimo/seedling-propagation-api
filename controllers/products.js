@@ -1,21 +1,18 @@
 import Product from "../models/products.js";
 import Category from "../models/categories.js";
 import AuditLog from "../models/auditLogs.js";
+import uploadImageToCloudinary from "../utils/uploadIMageToCloudinary.js";
 
-// Create a new product
+
 export const createProduct = async (req, res) => {
   try {
-    const {
-      productName,
-      productDescription,
-      initialPrice,
-      price,
-      productQuantity,
-      productImage,
-      category,
-      onOffer,
-      offerPrice,
-    } = req.body;
+    const { productName, productDescription, initialPrice, price, productQuantity, category, onOffer, offerPrice } = req.body;
+
+    if (!req.file) {
+      return res.status(400).json({ message: "Product image is required" });
+    }
+
+    const imageUploadResult = await uploadImageToCloudinary(req.file.buffer);
 
     const categoryFound = await Category.findById(category);
     if (!categoryFound) {
@@ -33,13 +30,13 @@ export const createProduct = async (req, res) => {
       initialPrice,
       price,
       productQuantity,
-      productImage,
+      productImage: imageUploadResult.secure_url,
       category,
       onOffer,
       offerPrice,
       createdBy: req.user._id,
     });
-
+    
     await product.save();
     return res.status(201).json({
       success: true,
@@ -47,7 +44,6 @@ export const createProduct = async (req, res) => {
       product,
     });
   } catch (error) {
-    console.error(error);
     return res.status(500).json({ success: false, message: error.message });
   }
 };
@@ -95,14 +91,29 @@ export const getProducts = async (req, res) => {
       .limit(Number(limit))
       .exec();
 
-    const totalCount = await Product.countDocuments(filter);
+    // Update the products to set isActive based on stock quantity
+    const updatedProducts = products.map(product => {
+      if (product.productQuantity <= 0) {
+        product.isActive = false;
+      } else {
+        product.isActive = true;
+      }
 
-    if (products.length === 0) {
+      if (!product.onOffer) {
+        product.offerPrice = undefined;
+      }
+
+      return product;
+    });
+
+    const totalProducts = await Product.countDocuments(filter);
+
+    if (updatedProducts.length === 0) {
       return res.status(200).json({
         success: true,
         products: [],
-        totalCount,
-        totalPages: Math.ceil(totalCount / limit),
+        totalProducts,
+        totalPages: Math.ceil(totalProducts / limit),
         currentPage: Number(page),
         message: "No products found matching your criteria.",
       });
@@ -110,9 +121,9 @@ export const getProducts = async (req, res) => {
 
     return res.status(200).json({
       success: true,
-      products,
-      totalCount,
-      totalPages: Math.ceil(totalCount / limit),
+      products: updatedProducts,
+      totalProducts,
+      totalPages: Math.ceil(totalProducts / limit),
       currentPage: Number(page),
     });
   } catch (error) {
@@ -124,7 +135,6 @@ export const getProducts = async (req, res) => {
   }
 };
 
-// Get a product by ID
 export const getProductById = async (req, res) => {
   try {
     const product = await Product.findById(req.params.id)
@@ -143,7 +153,6 @@ export const getProductById = async (req, res) => {
   }
 };
 
-// Update a product
 export const updateProduct = async (req, res) => {
   try {
     const {
@@ -151,10 +160,17 @@ export const updateProduct = async (req, res) => {
       productDescription,
       price,
       productQuantity,
-      productImage,
       category,
+      onOffer,
+      offerPrice,
     } = req.body;
 
+    if (!req.file) {
+      return res.status(400).json({ message: "Product image is required" });
+    }
+
+    const imageUploadResult = await uploadImageToCloudinary(req.file.buffer);
+    
     const categoryFound = await Category.findById(category);
     if (!categoryFound) {
       return res.status(400).json({ message: "Invalid category" });
@@ -175,13 +191,18 @@ export const updateProduct = async (req, res) => {
         productDescription,
         price,
         productQuantity,
-        productImage,
+        productImage: imageUploadResult.secure_url,
         category,
+        onOffer,
+        offerPrice,
       },
       { new: true }
     )
       .populate("category", "name")
       .populate("createdBy", "fullName email");
+
+    console.log("updated product",product);
+    
 
     if (!product) {
       return res.status(404).json({ message: "Product not found" });
@@ -223,7 +244,6 @@ export const updateProduct = async (req, res) => {
   }
 };
 
-// Soft delete
 export const softDeleteProduct = async (req, res) => {
   try {
     const product = await Product.findByIdAndUpdate(
@@ -246,7 +266,6 @@ export const softDeleteProduct = async (req, res) => {
   }
 };
 
-// Hard Delete a product
 export const deleteProduct = async (req, res) => {
   try {
     const product = await Product.findByIdAndDelete(req.params.id);
@@ -266,7 +285,6 @@ export const deleteProduct = async (req, res) => {
   }
 };
 
-// Deactivate product if stock reaches zero
 export const checkStockAndDeactivate = async (req, res) => {
   try {
     const product = await Product.findById(req.params.id);
@@ -315,7 +333,6 @@ export const updateProductStock = async (req, res) => {
   }
 };
 
-// Handle product offer pricing and discounts
 export const applyOffer = async (req, res) => {
   try {
     const { offerPrice } = req.body;
@@ -327,16 +344,31 @@ export const applyOffer = async (req, res) => {
 
     product.onOffer = true;
     product.offerPrice = offerPrice;
-
-    console.log("offerPrice>>>>>>>>",offerPrice);
-    console.log("product>>>>>>>>",product);
     
     await product.save();
     return res
       .status(200)
       .json({ success: true, message: "Offer applied successfully", product });
   } catch (error) {
-    console.error(error);
+    return res.status(500).json({ success: true, message: error.message });
+  }
+};
+
+export const removeOffer = async (req, res) => {
+  try {
+
+    const product = await Product.findById(req.params.id);
+    if (!product) {
+      return res.status(404).json({ message: "Product not found" });
+    }
+
+    product.onOffer = false;
+    
+    await product.save();
+    return res
+      .status(200)
+      .json({ success: true, message: "Offer removed successfully", product });
+  } catch (error) {
     return res.status(500).json({ success: true, message: error.message });
   }
 };

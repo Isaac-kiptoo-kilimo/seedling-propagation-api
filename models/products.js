@@ -11,9 +11,9 @@ const productSchema = new mongoose.Schema({
   onOffer: { type: Boolean, default: false },
   offerPrice: { type: Number },
   createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
-  isActive: { type: Boolean, default: true }, // Deactivate if stock is 0
+  isActive: { type: Boolean, default: true },
   createdAt: { type: Date, default: Date.now }
-});
+},{ timestamps: true });
 
 productSchema.pre('save', function (next) {
   if (this.productQuantity <= 0) {
