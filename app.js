@@ -12,7 +12,7 @@ const app = express();
 
 // Only one CORS setup
 const allowedOrigins = [
-  'http://localhost:3000',
+  'http://localhost:5173',
   'https://seedling-propogation-store-ui.vercel.app',
 ];
 

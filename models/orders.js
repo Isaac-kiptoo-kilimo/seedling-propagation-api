@@ -28,7 +28,7 @@ const orderSchema = new mongoose.Schema({
    paymentMethod: {
     type: String,
     enum: ['Cash', 'Mpesa'],
-    required: true
+    default: null
   },
   paymentDetails: {
     cash: {

@@ -55,21 +55,18 @@ export const getOrders = async (req, res) => {
   try {
     const { page = 1, limit = 10, search = '' } = req.query;
 
-    // Build search criteria
     const searchQuery = {};
     if (search) {
       searchQuery.purchaseNumber = { $regex: search, $options: 'i' };
     }
 
-    // Get total number of matching orders
     const totalOrders = await Order.countDocuments(searchQuery);
 
-    // Fetch paginated orders
     const orders = await Order.find(searchQuery)
       .populate('products.product', 'productName price offerPrice onOffer')
       .populate('placedBy', 'fullName')
       .populate('completedBy', 'fullName')
-      .sort({ createdAt: -1 }) // latest orders first
+      .sort({ createdAt: -1 })
       .skip((page - 1) * limit)
       .limit(Number(limit));
 

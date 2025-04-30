@@ -137,10 +137,10 @@ export const getStaff = async (req, res) => {
     const totalStaff = await User.countDocuments(filter);
 
     const staff = await User.find(filter)
-      .sort({ createdAt: -1 }) // newest staff first
+      .sort({ createdAt: -1 })
       .skip((page - 1) * limit)
       .limit(Number(limit));
-
+      
     res.status(200).json({
       success: true,
       message: "Retrieved all staff successfully",
