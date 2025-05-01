@@ -55,6 +55,7 @@ export const forgotPassword = async (req, res) => {
       if (!forgotPasswordRequest || !validateRequestExpiry(forgotPasswordRequest)) {
         // Create a new request
         const token = await createRequest(user);
+        console.log("token",token);
 
         // Send an email to the user
         await sendEmail({
@@ -62,10 +63,10 @@ export const forgotPassword = async (req, res) => {
           subject: "RESET PASSWORD LINK",
           message: RESET_PASSWORD_EMAIL({
             name: user.fullName,
-            link: `${process.env.FRONTEND_RESET_PASSWORD_URL}${token}`
+            link: `${process.env.FRONTEND_RESET_PASSWORD_URL_LOCAL}${token}` || `${process.env.FRONTEND_RESET_PASSWORD_URL}${token}`
           })
         });
-
+        
         return res.status(200).json({
           success: true,
           message: "Reset password link sent to email",
@@ -161,8 +162,9 @@ export const changePassword = async (req, res) => {
     const { currentPassword, newPassword } = req.body;
 
     const loggedInUser = await User.findById(req.user.id);
-
-    const validPassword = await loggedInUser.comparePassword(currentPassword);
+    
+    
+    const validPassword = await loggedInUser.validPassword(currentPassword);
 
     if (validPassword) {
       if (currentPassword !== newPassword) {

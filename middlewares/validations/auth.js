@@ -1,17 +1,39 @@
 import Joi from 'joi';
-export const validateLoginData = async (req,res,next) => {
-    const {body} = req;
-    const schema = Joi.object({
+
+const handleValidation = (schema) => async (req, res, next) => {
+    try {
+        await schema.validateAsync(req.body);
+        next();
+    } catch (error) {
+        res.status(422).json({
+            success: false,
+            message: error.message?.replaceAll('"', '') || "Invalid input"
+        });
+    }
+};
+
+export const validateLoginData = handleValidation(
+    Joi.object({
         email: Joi.string().email().required(),
         password: Joi.string().required()
-    });
-    try{
-        await schema.validateAsync(body);
-        next();
-    }catch(error){
-        return res.status(422).json({
-            success:false,
-            message: error.message ? error.message.replaceAll('\"','') : "Invalid input"
-        });
-    }   
-}
+    })
+);
+
+export const validateForgetPasswordData = handleValidation(
+    Joi.object({
+        email: Joi.string().email().required()
+    })
+);
+
+export const validateResetPasswordData = handleValidation(
+    Joi.object({
+        password: Joi.string().required()
+    })
+);
+
+export const validateChangePasswordData = handleValidation(
+    Joi.object({
+        currentPassword: Joi.string().required(),
+        newPassword: Joi.string().required()
+    })
+);
