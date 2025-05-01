@@ -176,7 +176,7 @@ export const createStaff = async (req, res) => {
       message:WELCOME_EMAIL({
           name:user.fullName,
           email:user.email,
-          link:process.env.FRONTEND_LOGIN_URL,
+          link: `${process.env.FRONTEND_RESET_PASSWORD_URL_LOCAL}${token}` || `${process.env.FRONTEND_RESET_PASSWORD_URL}${token}`,
           ...(password && {password})
       })
   });
