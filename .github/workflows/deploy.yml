@@ -30,4 +30,4 @@ jobs:
         env:
           KOYEB_API_TOKEN: ${{ secrets.KOYEB_API_TOKEN }}
         run: |
-          koyeb service redeploy seedling-propagation-api --app seedling-propagation-api --token $KOYEB_API_TOKEN
+          koyeb service redeploy normal-pepita --app seedling-propagation-api --token $KOYEB_API_TOKEN
