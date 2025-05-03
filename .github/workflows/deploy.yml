@@ -23,7 +23,8 @@ jobs:
 
       - name: Install Koyeb CLI
         run: |
-          curl -sL https://downloads.koyeb.com/cli | bash
+          curl -fsSL https://raw.githubusercontent.com/koyeb/koyeb-cli/master/install.sh | sh
+          echo export PATH=$HOME/.koyeb/bin:$PATH
           # Check if koyeb CLI was installed correctly
           which koyeb || echo "Koyeb CLI installation failed"
 
@@ -38,6 +39,5 @@ jobs:
         env:
           KOYEB_API_TOKEN: ${{ secrets.KOYEB_API_TOKEN }}
         run: |
-          echo "Using Koyeb CLI to authenticate and redeploy..."
           ~/.koyeb/bin/koyeb auth login --token $KOYEB_API_TOKEN
           ~/.koyeb/bin/koyeb service redeploy web-service --app seedling-propagation-api
