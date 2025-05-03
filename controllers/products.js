@@ -52,7 +52,6 @@ export const getProducts = async (req, res) => {
   try {
     const {
       category,
-      isActive,
       search,
       sortBy,
       sortOrder = "asc",
@@ -63,9 +62,8 @@ export const getProducts = async (req, res) => {
     } = req.query;
 
     const filter = {};
-
+    
     if (category) filter.category = category;
-    if (isActive !== undefined) filter.isActive = isActive === "true";
     if (minPrice) filter.price = { $gte: Number(minPrice) };
     if (maxPrice) filter.price = { ...filter.price, $lte: Number(maxPrice) };
 
@@ -106,6 +104,8 @@ export const getProducts = async (req, res) => {
       return product;
     });
 
+    console.log("all products>>>>>>>>", updatedProducts);
+
     const totalProducts = await Product.countDocuments(filter);
 
     if (updatedProducts.length === 0) {
@@ -119,6 +119,8 @@ export const getProducts = async (req, res) => {
       });
     }
 
+    console.log("all products>>>>>>>>", products);
+
     return res.status(200).json({
       success: true,
       products: updatedProducts,
@@ -126,6 +128,7 @@ export const getProducts = async (req, res) => {
       totalPages: Math.ceil(totalProducts / limit),
       currentPage: Number(page),
     });
+
   } catch (error) {
     console.error("Error fetching products:", error);
     return res.status(500).json({
