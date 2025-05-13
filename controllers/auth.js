@@ -55,7 +55,6 @@ export const forgotPassword = async (req, res) => {
       if (!forgotPasswordRequest || !validateRequestExpiry(forgotPasswordRequest)) {
         // Create a new request
         const token = await createRequest(user);
-        console.log("token",token);
 
         // Send an email to the user
         await sendEmail({

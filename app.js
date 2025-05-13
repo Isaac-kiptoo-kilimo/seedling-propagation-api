@@ -13,6 +13,7 @@ const app = express();
 // Only one CORS setup
 const allowedOrigins = [
   'http://localhost:5173',
+  'https://seedlingcentre.com/',
   'https://seedling-propogation-store-ui.vercel.app',
 ];
 

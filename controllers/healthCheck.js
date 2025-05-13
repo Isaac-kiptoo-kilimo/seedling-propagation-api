@@ -13,7 +13,6 @@ export const ready = async (_, res) => {
     await User.db;
     res.send('ok');
   } catch (error) {
-    console.log("Database connection error:", error.message);
     res.status(500).send(error.message);
   }
 };
@@ -43,7 +42,6 @@ export const dbtest = async (_, res) => {
       }
     });
   } catch (error) {
-    console.log("DB test error:", error);
     return res.status(500).json({
       success: false,
       message: "An error occurred during DB test",
