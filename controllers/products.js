@@ -104,8 +104,6 @@ export const getProducts = async (req, res) => {
       return product;
     });
 
-    console.log("all products>>>>>>>>", updatedProducts);
-
     const totalProducts = await Product.countDocuments(filter);
 
     if (updatedProducts.length === 0) {
@@ -118,8 +116,6 @@ export const getProducts = async (req, res) => {
         message: "No products found matching your criteria.",
       });
     }
-
-    console.log("all products>>>>>>>>", products);
 
     return res.status(200).json({
       success: true,
@@ -203,8 +199,6 @@ export const updateProduct = async (req, res) => {
     )
       .populate("category", "name")
       .populate("createdBy", "fullName email");
-
-    console.log("updated product",product);
     
 
     if (!product) {

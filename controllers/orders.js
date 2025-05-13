@@ -207,8 +207,6 @@ export const completePayment = async (req, res) => {
     } else {
       return res.status(400).json({ message: 'Invalid payment method.' });
     }
-
-    console.log("payment method",paymentMethod);
     
     order.paymentStatus = 'Completed';
     order.fulfillmentStatus = 'Processing';
