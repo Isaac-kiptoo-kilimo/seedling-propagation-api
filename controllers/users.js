@@ -42,6 +42,9 @@ export const createUser = async (req, res) => {
     const existing = await User.findOne({ email });
     if (existing) return res.status(400).json({ success: false, message: "Email already registered" });
 
+    const existingPhoneNo = await User.findOne({ phoneNumber });
+    if (existingPhoneNo) return res.status(400).json({ success: false, message: "Phone Number already registered" });
+
     const user = await User.create({
       fullName,
       email,
@@ -159,6 +162,9 @@ export const createStaff = async (req, res) => {
     const existing = await User.findOne({ email });
     if (existing) return res.status(400).json({ success: false, message: "Email already registered" });
 
+    const existingPhoneNo = await User.findOne({ phoneNumber });
+    if (existingPhoneNo) return res.status(400).json({ success: false, message: "Phone Number already registered" });
+
     const user = await User.create({
       fullName,
       email,
@@ -173,7 +179,7 @@ export const createStaff = async (req, res) => {
       message:WELCOME_EMAIL({
           name:user.fullName,
           email:user.email,
-          link: `${process.env.FRONTEND_RESET_PASSWORD_URL_LOCAL}${token}` || `${process.env.FRONTEND_RESET_PASSWORD_URL}${token}`,
+          link: `${process.env.FRONTEND_RESET_PASSWORD_URL_LOCAL}` || `${process.env.FRONTEND_RESET_PASSWORD_URL}`,
           ...(password && {password})
       })
   });
