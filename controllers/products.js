@@ -56,16 +56,12 @@ export const getProducts = async (req, res) => {
       sortBy,
       sortOrder = "asc",
       page = 1,
-      limit = 10,
-      minPrice,
-      maxPrice,
+      limit = 12
     } = req.query;
 
     const filter = {};
     
     if (category) filter.category = category;
-    if (minPrice) filter.price = { $gte: Number(minPrice) };
-    if (maxPrice) filter.price = { ...filter.price, $lte: Number(maxPrice) };
 
     if (search) {
       filter.$or = [
@@ -103,9 +99,9 @@ export const getProducts = async (req, res) => {
 
       return product;
     });
-
+    
     const totalProducts = await Product.countDocuments(filter);
-
+        
     if (updatedProducts.length === 0) {
       return res.status(200).json({
         success: true,
@@ -113,6 +109,7 @@ export const getProducts = async (req, res) => {
         totalProducts,
         totalPages: Math.ceil(totalProducts / limit),
         currentPage: Number(page),
+        limit: limit,
         message: "No products found matching your criteria.",
       });
     }
@@ -123,16 +120,17 @@ export const getProducts = async (req, res) => {
       totalProducts,
       totalPages: Math.ceil(totalProducts / limit),
       currentPage: Number(page),
+      limit: limit
     });
 
   } catch (error) {
-    console.error("Error fetching products:", error);
     return res.status(500).json({
       success: false,
       message: error.message || "Internal server error",
     });
   }
 };
+
 
 export const getProductById = async (req, res) => {
   try {
