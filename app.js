@@ -14,6 +14,7 @@ const app = express();
 const allowedOrigins = [
   'http://localhost:5173',
   'https://seedlingcentre.com',
+  'https://www.seedlingcentre.com',
   'https://seedling-propogation-store-ui.vercel.app',
 ];
 
