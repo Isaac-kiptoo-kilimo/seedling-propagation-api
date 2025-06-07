@@ -85,42 +85,48 @@ export const getProducts = async (req, res) => {
       .limit(Number(limit))
       .exec();
 
-    // Update the products to set isActive based on stock quantity
+    // Update each product with computed flags
     const updatedProducts = products.map(product => {
-      if (product.productQuantity <= 0) {
-        product.isActive = false;
-      } else {
-        product.isActive = true;
-      }
-
+      product.isActive = product.productQuantity > 0;
       if (!product.onOffer) {
         product.offerPrice = undefined;
       }
-
       return product;
     });
-    
-    const totalProducts = await Product.countDocuments(filter);
-        
-    if (updatedProducts.length === 0) {
-      return res.status(200).json({
-        success: true,
-        products: [],
-        totalProducts,
-        totalPages: Math.ceil(totalProducts / limit),
-        currentPage: Number(page),
-        limit: limit,
-        message: "No products found matching your criteria.",
-      });
+
+    // Total products in DB (unfiltered)
+    const totalProducts = await Product.countDocuments();
+
+    // Total products after filtering
+    const totalFilteredProducts = await Product.countDocuments(filter);
+
+    // Total products per category (aggregation)
+    const totalsPerCategoryAgg = await Product.aggregate([
+      {
+        $group: {
+          _id: "$category",
+          count: { $sum: 1 }
+        }
+      }
+    ]);
+
+    // Transform aggregation result to a cleaner object
+    const totalsPerCategory = {};
+    for (const item of totalsPerCategoryAgg) {
+      const categoryId = item._id?.toString() || "Uncategorized";
+      totalsPerCategory[categoryId] = item.count;
     }
 
     return res.status(200).json({
       success: true,
       products: updatedProducts,
       totalProducts,
-      totalPages: Math.ceil(totalProducts / limit),
+      totalFilteredProducts,
+      totalPages: Math.ceil(totalFilteredProducts / limit),
       currentPage: Number(page),
-      limit: limit
+      limit: Number(limit),
+      totalsPerCategory,
+      message: updatedProducts.length === 0 ? "No products found matching your criteria." : undefined
     });
 
   } catch (error) {
