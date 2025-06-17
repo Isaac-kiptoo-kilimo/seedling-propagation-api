@@ -27,6 +27,7 @@ export const validateForgetPasswordData = handleValidation(
 
 export const validateResetPasswordData = handleValidation(
     Joi.object({
+        code: Joi.string().required(),
         password: Joi.string().required()
     })
 );
