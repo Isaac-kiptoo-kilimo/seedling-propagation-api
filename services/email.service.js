@@ -16,7 +16,7 @@ transporter.verify((error, success) => {
   if (error) {
     console.error("Brevo SMTP connection failed:", error);
   } else {
-    console.log("Brevo SMTP server is ready to send emails!");
+    console.log("Brevo SMTP server is ready to send emails!",success);
   }
 });
 
@@ -24,12 +24,12 @@ export const sendEmail = async ({ to, subject, message }) =>
   new Promise(async (resolve, reject) => {
     try {
       const mailOptions = {
-        from: process.env.BREVO_USER,
+        from: "isaackilimok2@gmail.com",
         to,
         subject,
         html: message,
       };
-
+      
       await transporter.sendMail(mailOptions);
       resolve("Email sent successfully");
     } catch (error) {
