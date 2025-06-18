@@ -1,7 +1,11 @@
 import { generatePlatformJWT } from "../middlewares/jwt.js";
-import User from '../models/users.js';
-import bcrypt from 'bcrypt';
-import ForgotPasswordRequest, { createRequest, validateRequestExpiry, validateInactiveRequest } from "../models/forgotRequestPassword.js";
+import User from "../models/users.js";
+import bcrypt from "bcrypt";
+import ForgotPasswordRequest, {
+  createRequest,
+  validateRequestExpiry,
+  validateInactiveRequest,
+} from "../models/forgotRequestPassword.js";
 import { sendEmail } from "../services/email.service.js";
 import { RESET_PASSWORD_EMAIL } from "../email.template.js";
 
@@ -48,47 +52,56 @@ export const forgotPassword = async (req, res) => {
     const { email } = req.body;
 
     const user = await User.findOne({ email });
-    
+
     if (user) {
+      const forgotPasswordRequest = await ForgotPasswordRequest.findOne({
+        userId: user._id,
+      }).sort({ createdAt: -1 });
 
-      const forgotPasswordRequest = await ForgotPasswordRequest.findOne({ userId: user._id }).sort({ createdAt: -1 });
-
-      if (!forgotPasswordRequest || !validateRequestExpiry(forgotPasswordRequest)) {
+      if (
+        !forgotPasswordRequest ||
+        !validateRequestExpiry(forgotPasswordRequest)
+      ) {
         // Create a new request
-        const token = await createRequest(user);        
+        const token = await createRequest(user);
         // Send an email to the user
+        const {
+          FRONTEND_RESET_PASSWORD_URL,
+        } = process.env;
+
+        if (!FRONTEND_RESET_PASSWORD_URL) throw new Error("No reset‑password base URL configured");
+        if (!token) throw new Error("Reset token is missing");
+
         await sendEmail({
           to: user.email,
           subject: "RESET PASSWORD LINK",
           message: RESET_PASSWORD_EMAIL({
             name: user.fullName,
-            link: `${process.env.FRONTEND_RESET_PASSWORD_URL_LOCAL}/${token}` || `${process.env.FRONTEND_RESET_PASSWORD_VERCEL_URL}/${token}` || `${process.env.FRONTEND_RESET_PASSWORD_URL}/${token}`
-          })
+            link: `${FRONTEND_RESET_PASSWORD_URL}/${token}`,
+          }),
         });
-                
+
         return res.status(200).json({
           success: true,
           message: "Reset password link sent to email",
-          data: token
+          data: token,
         });
-
       } else {
         return res.status(200).json({
           success: false,
-          message: "Reset password link has already been sent to your email"
+          message: "Reset password link has already been sent to your email",
         });
       }
-
     } else {
       return res.status(403).json({
         success: false,
-        message: "Invalid email address"
+        message: "Invalid email address",
       });
     }
   } catch (error) {
     return res.status(500).json({
       success: false,
-      message: error.message || "An error occurred. Try Again!"
+      message: error.message || "An error occurred. Try Again!",
     });
   }
 };
@@ -102,21 +115,21 @@ export const resetPassword = async (req, res) => {
     if (!forgotPasswordRequest) {
       return res.status(403).json({
         success: false,
-        message: "Invalid reset password code."
+        message: "Invalid reset password code.",
       });
     }
 
     if (!validateRequestExpiry(forgotPasswordRequest)) {
       return res.status(403).json({
         success: false,
-        message: "Reset password code is already expired."
+        message: "Reset password code is already expired.",
       });
     }
 
     if (!validateInactiveRequest(forgotPasswordRequest)) {
       return res.status(403).json({
         success: false,
-        message: "Reset password code has already been used."
+        message: "Reset password code has already been used.",
       });
     }
 
@@ -124,7 +137,7 @@ export const resetPassword = async (req, res) => {
     if (!user) {
       return res.status(404).json({
         success: false,
-        message: "User not found."
+        message: "User not found.",
       });
     }
 
@@ -136,7 +149,7 @@ export const resetPassword = async (req, res) => {
     if (isSamePassword) {
       return res.status(200).json({
         success: false,
-        message: "New password is similar to the old password."
+        message: "New password is similar to the old password.",
       });
     }
 
@@ -148,25 +161,23 @@ export const resetPassword = async (req, res) => {
 
     return res.status(200).json({
       success: true,
-      message: "Password reset successful"
+      message: "Password reset successful",
     });
-
   } catch (error) {
     return res.status(500).json({
       success: false,
-      message: error.message || "An error occurred resetting password. Try again!"
+      message:
+        error.message || "An error occurred resetting password. Try again!",
     });
   }
 };
-
 
 export const changePassword = async (req, res) => {
   try {
     const { currentPassword, newPassword } = req.body;
 
     const loggedInUser = await User.findById(req.user.id);
-    
-    
+
     const validPassword = await loggedInUser.validPassword(currentPassword);
 
     if (validPassword) {
@@ -176,25 +187,25 @@ export const changePassword = async (req, res) => {
 
         return res.status(200).json({
           success: true,
-          message: "Password has been changed successfully."
+          message: "Password has been changed successfully.",
         });
       } else {
         return res.status(200).json({
           success: false,
-          message: "New password cannot be similar to the old password."
+          message: "New password cannot be similar to the old password.",
         });
       }
     } else {
       return res.status(200).json({
         success: false,
-        message: "Current Password is incorrect. Try Again."
+        message: "Current Password is incorrect. Try Again.",
       });
     }
   } catch (error) {
     return res.status(500).json({
       success: false,
-      message: error.message || "An error occurred changing password. Try Again!"
+      message:
+        error.message || "An error occurred changing password. Try Again!",
     });
   }
 };
-
